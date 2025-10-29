@@ -72,3 +72,6 @@ POST http://country_currency_api.test/api/countries/refresh
 
 ###
 GET http://country_currency_api.test/api/countries/image
+
+###
+GET https://country-currency-main-vzxm73.laravel.cloud/api/countries?region=Africa&sort=gdp_desc

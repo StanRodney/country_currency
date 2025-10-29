@@ -13,7 +13,7 @@ use Carbon\Carbon;
 
 class CountryController extends Controller
 {
-    // 🧠 POST /countries/refresh
+    //  POST /countries/refresh
     public function refresh()
     {
         try {
@@ -79,8 +79,7 @@ class CountryController extends Controller
         }
     }
 
-    // 📄 GET /countries
-    // at top of file ensure this: use Illuminate\Http\Request; use App\Models\Country;
+    //  GET /countries
 
     public function index(Request $request)
     {
@@ -119,7 +118,7 @@ class CountryController extends Controller
 
         $results = $query->get();
 
-        // Map to the expected response shape (optional — adjust if your DB columns already match)
+
         $data = $results->map(function ($item) {
             return [
                 'id' => $item->id,
@@ -139,7 +138,7 @@ class CountryController extends Controller
     }
 
 
-    // 🔍 GET /countries/{name}
+    //  GET /countries/{name}
     public function show($name)
     {
         $country = Country::whereRaw('LOWER(name) = ?', [strtolower($name)])->first();
@@ -167,7 +166,7 @@ class CountryController extends Controller
             'flag_url' => 'nullable|string',
         ]);
 
-        // ✅ Update or create new record if it doesn't exist
+        //  Update or create new record if it doesn't exist
         $country = Country::updateOrCreate(
             ['name' => $validated['name']],
             [
@@ -186,9 +185,7 @@ class CountryController extends Controller
             'data' => $country
         ], 200);
     }
-
-
-    // ❌ DELETE /countries/{name}
+    //  DELETE /countries/{name}
     public function destroy($name)
     {
         $country = Country::where('name', $name)->first();
@@ -201,7 +198,7 @@ class CountryController extends Controller
         return response()->json(null, 204);
     }
 
-    // 📊 GET /status
+    //  GET /status
     public function status()
     {
         $total = Country::count();
@@ -213,7 +210,7 @@ class CountryController extends Controller
         ]);
     }
 
-    // 🖼️ GET /countries/image
+    //  GET /countries/image
     public function summaryImage()
     {
         $path = storage_path('app/public/cache/summary.png');
@@ -225,7 +222,7 @@ class CountryController extends Controller
         return response()->file($path);
     }
 
-// 🧾 Generate Summary Image
+//  Generate Summary Image
     private function generateSummaryImage()
     {
         $totalCountries = \App\Models\Country::count();
@@ -269,7 +266,7 @@ class CountryController extends Controller
             $y += 35;
         }
 
-        // ✅ Save image to public storage so it’s web-accessible
+        //  Save image to public storage so it’s web-accessible
         $path = storage_path('app/public/cache/summary.png');
         $image->save($path);
     }
