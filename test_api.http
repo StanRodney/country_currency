@@ -1,0 +1,74 @@
+POST http://country_currency_api.test/api/countries/refresh
+###
+GET http://country_currency_api.test/api/countries
+
+###
+GET http://country_currency_api.test/api/countries?region=Africa
+Accept: application/json
+
+###
+GET http://country_currency_api.test/api/countries?currency=NGN
+Accept: application/json
+
+###
+GET http://country_currency_api.test/api/countries?sort=gdp_desc
+Accept: application/json
+
+###
+GET http://country_currency_api.test/api/countries?region=Africa&currency=NGN&sort=gdp_desc
+Accept: application/json
+
+###
+GET http://country_currency_api.test/api/countries?name=Nigeria
+Accept: application/json
+
+###
+GET http://country_currency_api.test/api/countries/Nigeria
+
+###
+DELETE http://country_currency_api.test/api/countries/Nigeria
+
+###
+GET http://country_currency_api.test/api/status
+
+
+###
+GET http://country_currency_api.test/api/countries/refresh
+
+###
+POST http://country_currency_api.test/api/countries
+Content-Type: application/json
+
+{
+    "name": "Nigeria"
+}
+
+###
+GET http://country_currency_api.test/api/countries
+
+###
+GET http://country_currency_api.test/api/countries/refresh
+
+###
+GET http://country_currency_api.test/api/countries/image
+
+###
+POST http://country_currency_api.test/api/countries
+Content-Type: application/json
+
+{
+  "name": "Nigeria",
+  "capital": "Abuja",
+  "region": "Africa",
+  "population": 223804632,
+  "currency_code": "NGN",
+  "exchange_rate": 0.0012,
+  "estimated_gdp": 474000000000,
+  "flag_url": "https://flagcdn.com/w320/ng.png"
+}
+
+###
+POST http://country_currency_api.test/api/countries/refresh
+
+###
+GET http://country_currency_api.test/api/countries/image
