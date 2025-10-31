@@ -47,25 +47,8 @@ Content-Type: application/json
 GET http://country_currency_api.test/api/countries
 
 ###
-GET http://country_currency_api.test/api/countries/refresh
-
-###
 GET http://country_currency_api.test/api/countries/image
 
-###
-POST http://country_currency_api.test/api/countries
-Content-Type: application/json
-
-{
-  "name": "Nigeria",
-  "capital": "Abuja",
-  "region": "Africa",
-  "population": 223804632,
-  "currency_code": "NGN",
-  "exchange_rate": 0.0012,
-  "estimated_gdp": 474000000000,
-  "flag_url": "https://flagcdn.com/w320/ng.png"
-}
 
 ###
 POST http://country_currency_api.test/api/countries/refresh
@@ -75,3 +58,9 @@ GET http://country_currency_api.test/api/countries/image
 
 ###
 GET https://country-currency-main-vzxm73.laravel.cloud/api/countries?region=Africa&sort=gdp_desc
+
+###
+GET http://country_currency_api.test/api/countries/Nigeria
+
+###
+GET http://country_currency_api.test/api/invalidroute

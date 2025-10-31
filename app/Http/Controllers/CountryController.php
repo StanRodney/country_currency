@@ -4,20 +4,21 @@ namespace App\Http\Controllers;
 
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
 use App\Models\Country;
 use Carbon\Carbon;
+use Throwable;
+
 
 class CountryController extends Controller
 {
-    //  POST /countries/refresh
+    // POST /countries/refresh
     public function refresh()
     {
         try {
-            // Fetch countries
+            // Fetch country data
             $countriesResponse = Http::timeout(15)->get('https://restcountries.com/v2/all?fields=name,capital,region,population,flag,currencies');
             if (!$countriesResponse->successful()) {
                 return response()->json([
@@ -26,6 +27,7 @@ class CountryController extends Controller
                 ], 503);
             }
 
+            // Fetch exchange rate data
             $exchangeResponse = Http::timeout(15)->get('https://open.er-api.com/v6/latest/USD');
             if (!$exchangeResponse->successful()) {
                 return response()->json([
@@ -69,7 +71,10 @@ class CountryController extends Controller
             // Generate summary image
             $this->generateSummaryImage();
 
-            return response()->json(['message' => 'Countries refreshed successfully', 'last_refreshed_at' => $now], 200);
+            return response()->json([
+                'message' => 'Countries refreshed successfully',
+                'last_refreshed_at' => $now
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -79,31 +84,26 @@ class CountryController extends Controller
         }
     }
 
-    //  GET /countries
-
+    // GET /countries
     public function index(Request $request)
     {
-        $query = \App\Models\Country::query();
+        $query = Country::query();
 
-        // Filter: region (case-insensitive)
         if ($request->filled('region')) {
             $region = $request->get('region');
             $query->whereRaw('LOWER(region) = ?', [strtolower($region)]);
         }
 
-        // Filter: currency (case-insensitive) - expects a currency code like "NGN"
         if ($request->filled('currency')) {
             $currency = strtoupper($request->get('currency'));
             $query->whereRaw('UPPER(currency_code) = ?', [$currency]);
         }
 
-        // Optional: exact name match (useful)
         if ($request->filled('name')) {
             $name = $request->get('name');
             $query->whereRaw('LOWER(name) = ?', [strtolower($name)]);
         }
 
-        // Sorting: gdp_desc or gdp_asc
         if ($request->filled('sort')) {
             $sort = $request->get('sort');
             if ($sort === 'gdp_desc') {
@@ -112,12 +112,10 @@ class CountryController extends Controller
                 $query->orderBy('estimated_gdp', 'asc');
             }
         } else {
-            // sensible default ordering (optional)
             $query->orderBy('name', 'asc');
         }
 
         $results = $query->get();
-
 
         $data = $results->map(function ($item) {
             return [
@@ -125,10 +123,10 @@ class CountryController extends Controller
                 'name' => $item->name,
                 'capital' => $item->capital,
                 'region' => $item->region,
-                'population' => (int)$item->population,
+                'population' => (int) $item->population,
                 'currency_code' => $item->currency_code,
-                'exchange_rate' => $item->exchange_rate !== null ? (float)$item->exchange_rate : null,
-                'estimated_gdp' => $item->estimated_gdp !== null ? (float)$item->estimated_gdp : null,
+                'exchange_rate' => $item->exchange_rate !== null ? (float) $item->exchange_rate : null,
+                'estimated_gdp' => $item->estimated_gdp !== null ? (float) $item->estimated_gdp : null,
                 'flag_url' => $item->flag_url,
                 'last_refreshed_at' => $item->last_refreshed_at ? $item->last_refreshed_at->toIso8601String() : null,
             ];
@@ -137,68 +135,32 @@ class CountryController extends Controller
         return response()->json($data, 200);
     }
 
-
-    //  GET /countries/{name}
+    // GET /countries/{name}
     public function show($name)
     {
         $country = Country::whereRaw('LOWER(name) = ?', [strtolower($name)])->first();
 
         if (!$country) {
-            return response()->json([
-                'error' => 'Country not found'
-            ], 404);
+            return response()->json(['error' => 'Country not found'], 404);
         }
 
         return response()->json($country);
     }
 
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'capital' => 'nullable|string',
-            'region' => 'nullable|string',
-            'population' => 'nullable|integer',
-            'currency_code' => 'nullable|string',
-            'exchange_rate' => 'nullable|numeric',
-            'estimated_gdp' => 'nullable|numeric',
-            'flag_url' => 'nullable|string',
-        ]);
-
-        //  Update or create new record if it doesn't exist
-        $country = Country::updateOrCreate(
-            ['name' => $validated['name']],
-            [
-                'capital' => $validated['capital'] ?? '',
-                'region' => $validated['region'] ?? '',
-                'population' => $validated['population'] ?? 0,
-                'currency_code' => $validated['currency_code'] ?? '',
-                'exchange_rate' => $validated['exchange_rate'] ?? null,
-                'estimated_gdp' => $validated['estimated_gdp'] ?? 0,
-                'flag_url' => $validated['flag_url'] ?? '',
-            ]
-        );
-
-        return response()->json([
-            'message' => 'Country created or updated successfully.',
-            'data' => $country
-        ], 200);
-    }
-    //  DELETE /countries/{name}
+    // DELETE /countries/{name}
     public function destroy($name)
     {
-        $country = Country::where('name', $name)->first();
+        $country = Country::whereRaw('LOWER(name) = ?', [strtolower($name)])->first();
 
         if (!$country) {
             return response()->json(['error' => 'Country not found'], 404);
         }
 
         $country->delete();
-        return response()->json(null, 204);
+        return response()->json(['message' => 'Country deleted successfully'], 200);
     }
 
-    //  GET /status
+    // GET /status
     public function status()
     {
         $total = Country::count();
@@ -210,8 +172,8 @@ class CountryController extends Controller
         ]);
     }
 
-    //  GET /countries/image
-    public function summaryImage()
+    // GET /countries/image
+    public function image()
     {
         $path = storage_path('app/public/cache/summary.png');
 
@@ -222,24 +184,22 @@ class CountryController extends Controller
         return response()->file($path);
     }
 
-//  Generate Summary Image
+    // Generate summary image
     private function generateSummaryImage()
     {
-        $totalCountries = \App\Models\Country::count();
-        $topCountries = \App\Models\Country::orderByDesc('estimated_gdp')->take(5)->get(['name', 'estimated_gdp']);
-        $timestamp = now()->toDateTimeString();
+        $totalCountries = Country::count();
+        $topCountries = Country::orderByDesc('estimated_gdp')->take(5)->get(['name', 'estimated_gdp']);
 
-        $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
+        $manager = new ImageManager(new Driver());
         $image = $manager->create(800, 600)->fill('#f9fafb');
 
         $image->text('Country Summary Report', 400, 50, function ($font) {
             $font->size(36);
             $font->color('#111827');
             $font->align('center');
-            $font->valign('top');
         });
 
-        $image->text("Total Countries: " . $totalCountries, 50, 120, function ($font) {
+        $image->text("Total Countries: $totalCountries", 50, 120, function ($font) {
             $font->size(24);
             $font->color('#374151');
         });
@@ -254,8 +214,8 @@ class CountryController extends Controller
             $font->size(24);
             $font->color('#111827');
         });
-        $y += 40;
 
+        $y += 40;
         foreach ($topCountries as $index => $country) {
             $rank = $index + 1;
             $text = "{$rank}. {$country->name} — GDP: " . number_format($country->estimated_gdp, 2);
@@ -266,10 +226,11 @@ class CountryController extends Controller
             $y += 35;
         }
 
-        //  Save image to public storage so it’s web-accessible
         $path = storage_path('app/public/cache/summary.png');
+        if (!is_dir(dirname($path))) {
+            mkdir(dirname($path), 0777, true);
+        }
+
         $image->save($path);
     }
-
 }
-
